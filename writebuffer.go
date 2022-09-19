@@ -34,12 +34,12 @@ func (wb *writeBuffer) delete(key []byte) {
 func (wb *writeBuffer) flush() error {
 	// TODO: flush to db
 
-	for item := range wb.writes.iter() {
-		wb.cache.set(item.key, item.value)
+	for k, v := range wb.writes.copy().m {
+		wb.cache.set([]byte(k), v)
 	}
 
-	for item := range wb.deletes.iter() {
-		wb.cache.delete(item.key)
+	for k := range wb.deletes.copy().m{
+		wb.cache.delete([]byte(k))
 	}
 
 	wb.writes.reset()
