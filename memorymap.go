@@ -57,3 +57,17 @@ func (mm *memoryMap) iter() <-chan memoryMapItem {
 
 	return c
 }
+
+func (mm *memoryMap) copy() *memoryMap {
+	mm.Lock()
+	defer mm.Unlock()
+
+	m := make(map[string][]byte, len(mm.m))
+	for k, v := range mm.m {
+		m[k] = v
+	}
+
+	return &memoryMap{
+		m: m,
+	}
+}
