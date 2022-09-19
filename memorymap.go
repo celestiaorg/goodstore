@@ -3,7 +3,7 @@ package goodstore
 import "sync"
 
 type memoryMap struct {
-	sync.Mutex
+	sync.RWMutex
 	m map[string][]byte
 }
 
@@ -19,6 +19,9 @@ func newMemoryMap() *memoryMap {
 }
 
 func (mm *memoryMap) get(key []byte) ([]byte, error) {
+	mm.RLock()
+	defer mm.RUnlock()
+
 	if value, ok := mm.m[string(key)]; ok {
 		return value, nil
 	}
@@ -26,10 +29,14 @@ func (mm *memoryMap) get(key []byte) ([]byte, error) {
 }
 
 func (mm *memoryMap) set(key []byte, value []byte) {
+	mm.Lock()
+	defer mm.Unlock()
 	mm.m[string(key)] = value
 }
 
 func (mm *memoryMap) delete(key []byte) error {
+	mm.Lock()
+	defer mm.Unlock()
 	_, ok := mm.m[string(key)]
 	if ok {
 		delete(mm.m, string(key))
@@ -39,14 +46,16 @@ func (mm *memoryMap) delete(key []byte) error {
 }
 
 func (mm *memoryMap) reset() {
+	mm.Lock()
+	defer mm.Unlock()
 	mm.m = make(map[string][]byte)
 }
 
 func (mm *memoryMap) iter() <-chan memoryMapItem {
 	c := make(chan memoryMapItem)
 	go func() {
-		mm.Lock()
-		defer mm.Unlock()
+		mm.RLock()
+		defer mm.RUnlock()
 
 		for k, v := range mm.m {
 			c <- memoryMapItem{[]byte(k), v}
